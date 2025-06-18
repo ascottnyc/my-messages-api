@@ -3,7 +3,8 @@ class MessagesController < ApplicationController
 
   # GET /messages
   def index
-    @messages = Message.all
+    @messages = Message
+      .where(user: session[:id])
 
     render json: @messages
   end
@@ -16,6 +17,11 @@ class MessagesController < ApplicationController
   # POST /messages
   def create
     @message = Message.new(message_params)
+    @message.user = session[:id]
+    @message.timestamp = Time.now.utc
+    @message.save!
+
+    TwilioSms.send_text(@message.phone, @message.message) 
 
     if @message.save
       render json: @message, status: :created, location: @message
